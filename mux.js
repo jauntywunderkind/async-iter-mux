@@ -62,16 +62,11 @@ AsyncIterMux.prototype= Object.create( null, {
 		}
 	},
 
+
 	// next
 	_raceResolve: {
-		value: function _raceResolve({
-			pos,
-			iteration,
-			stream,
-			resolve,
-			reject
-		 }){
-			// check for done
+		value: function _raceResolve( ctx){
+			// check mux for done
 			if( this.done){
 				const value= this.doneValue
 				delete this.doneValue
@@ -81,26 +76,30 @@ AsyncIterMux.prototype= Object.create( null, {
 				}
 			}
 
+			// check this stream for done
+			if( ctx.iteration.done){
+				// stream can now be removed & muxing continues
+				return this._raceReject( ctx)
+			}
+
+			// get next value, using tools of our our continuation
+			const next= ctx.stream.next( ctx.resolve, ctx.reject)
+
 			// check pos. streams can be deleted, which would change pos.
+			let pos= ctx.pos
 			if( this.stream[ pos]!== stream){
 				// update position, locally & in continuation
 				pos= resolve.pos= reject.pos= this.stream.indexOf( stream)
 			}
-
-			if( iteration.done){
-				// TODO
-				return
-			}
-
-			// get next value
-			const next= stream.next( resolve, reject)
+			// put next into pending
 			this.pending[ pos]= next
-			
-			return iteration
+
+			// yield up the value
+			return ctx.iteration
 		}
 	},
 	_raceReject: {
-		value: function _raceReject( value){
+		value: function _raceReject( ctx){
 			
 		}
 	},
