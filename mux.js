@@ -11,6 +11,12 @@ export function AsyncIterMux( opt){
 		},
 		stream: {
 			value: []
+		},
+		_raceResolve: {
+			value: this._raceResolve.bind( this)
+		},
+		_raceReject: {
+			value: this._raceReject.bind( this)
 		}
 	})
 	return this
@@ -34,7 +40,6 @@ AsyncIterMux.prototype= Object.create( null, {
 
 			// this is the heart of the strategy: handlers that enrich iteration
 			// with additional context we can process with
-
 			function resolve( iteration){
 				return {
 					pos: resolve.pos,
@@ -96,7 +101,13 @@ AsyncIterMux.prototype= Object.create( null, {
 	},
 	_raceReject: {
 		value: function _raceReject( ctx){
-			
+			// remove stream
+			const pos= this._getStreamPos( ctx)
+			this.stream.splice( pos, 1)
+			this.pending.splice( pos, 1)
+
+			// try again
+			return this.next()
 		}
 	},
 	_getStreamPos: {
@@ -124,7 +135,7 @@ AsyncIterMux.prototype= Object.create( null, {
 		value: function next( passedIn){
 			return Promise
 				.race( this.pending)
-				.then( this._raceResolve, this,_raceReject)
+				.then( this._raceResolve, this._raceReject)
 		}
 	},
 
@@ -136,8 +147,8 @@ AsyncIterMux.prototype= Object.create( null, {
 	abort( abortEx){
 	},
 	[ Symbol.asyncIterator]: {
-			value: function(){
-				return this
-			}
+		value: function(){
+			return this
+		}
 	}
 })
