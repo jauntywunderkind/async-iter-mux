@@ -31,26 +31,32 @@ AsyncIterMux.prototype= Object.create( null, {
 			this.data.set( stream, datum)
 			// save this stream
 			this.stream.push( stream)
-	
+
+			// this is the heart of the strategy: handlers that enrich iteration
+			// with additional context we can process with
+
 			function resolve( iteration){
 				return {
-					pos,
+					pos: resolve.pos,
 					iteration,
 					stream,
 					resolve,
 					reject
 				}
 			}
+			resolve.pos= pos
 			function reject( err){
 				return {
-					pos,
+					pos: reject.pos,
 					err,
 					stream
 				}
 			}
+			reject.pos= pos
 	
-			// resolve/reject them
+			// run first resolve/reject
 			const next= stream.next.then( resolve, reject)
+			// store in pending
 			this.pending.push( next)
 			return this
 		}
@@ -58,17 +64,51 @@ AsyncIterMux.prototype= Object.create( null, {
 
 	// next
 	_raceResolve: {
-		value: function _raceResolve( value){
+		value: function _raceResolve({
+			pos,
+			iteration,
+			stream,
+			resolve,
+			reject
+		 }){
+			// check for done
+			if( this.done){
+				const value= this.doneValue
+				delete this.doneValue
+				return {
+					done: true,
+					value
+				}
+			}
+
+			// check pos. streams can be deleted, which would change pos.
+			if( this.stream[ pos]!== stream){
+				// update position, locally & in continuation
+				pos= resolve.pos= reject.pos= this.stream.indexOf( stream)
+			}
+
+			if( iteration.done){
+				// TODO
+				return
+			}
+
+			// get next value
+			const next= stream.next( resolve, reject)
+			this.pending[ pos]= next
 			
+			return iteration
 		}
 	},
 	_raceReject: {
 		value: function _raceReject( value){
+			
 		}
 	},
 	next: {
 		value: function next( passedIn){
-			return Promise.race( this.pending).then( this._raceResolve, this,_raceReject)
+			return Promise
+				.race( this.pending)
+				.then( this._raceResolve, this,_raceReject)
 		}
 	},
 
