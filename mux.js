@@ -86,11 +86,7 @@ AsyncIterMux.prototype= Object.create( null, {
 			const next= ctx.stream.next( ctx.resolve, ctx.reject)
 
 			// check pos. streams can be deleted, which would change pos.
-			let pos= ctx.pos
-			if( this.stream[ pos]!== stream){
-				// update position, locally & in continuation
-				pos= resolve.pos= reject.pos= this.stream.indexOf( stream)
-			}
+			const pos= this._getStreamPos( ctx)
 			// put next into pending
 			this.pending[ pos]= next
 
@@ -101,6 +97,27 @@ AsyncIterMux.prototype= Object.create( null, {
 	_raceReject: {
 		value: function _raceReject( ctx){
 			
+		}
+	},
+	_getStreamPos: {
+		value: function({ pos, stream}){
+			// pos is only expected pos. but streams can also move.
+			if( this.stream[ pos]=== stream){
+				return pos
+			}
+	
+			// calculate position again
+			pos= this.stream.indexOf( stream)
+			if( pos=== -1){
+				throw new Error( "Could not find stream")
+			}
+			// update our continuations
+			if( ctx.resolve){
+				ctx.resolve.pos= pos
+				ctx.reject.pos= pos
+			}
+			// return pos
+			return pos
 		}
 	},
 	next: {
