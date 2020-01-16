@@ -1,5 +1,5 @@
 import ShimToPolyfill from "shim-to-polyfill"
-const AbortError= ShimToPolyfill( "AbortError", import("abort-controller"))
+const AbortError= ShimToPolyfill( "AbortError", import("@jauntywunderkind/abort-controller"))
 
 export function AsyncIterMux( opt){
 	Object.defineProperties( this, {
@@ -18,7 +18,6 @@ export function AsyncIterMux( opt){
 			value: this._raceReject.bind( this)
 		}
 	})
-
 	return this
 }
 export {
@@ -73,11 +72,9 @@ AsyncIterMux.prototype= Object.create( null, {
 		value: function _raceResolve( ctx){
 			// check mux for done
 			if( this.done){
-				const value= this.doneValue
-				delete this.doneValue
 				return {
 					done: true,
-					value
+					value: undefined
 				}
 			}
 
@@ -101,10 +98,27 @@ AsyncIterMux.prototype= Object.create( null, {
 	},
 	_raceReject: {
 		value: function _raceReject( ctx){
+			// already done
+			if( this.done){
+				return {
+					done: true,
+					value: undefined
+				}
+			}
+
 			// remove stream
 			const pos= this._getStreamPos( ctx)
 			this.stream.splice( pos, 1)
 			this.pending.splice( pos, 1)
+
+			// all items have been consumed
+			if( this.stream.length=== 0&& this.terminate!== false)
+				this._done()
+				return {
+					done: true,
+					value: undefined
+				}
+			}
 
 			// try again
 			return this.next()
@@ -143,13 +157,14 @@ AsyncIterMux.prototype= Object.create( null, {
 	_done: {
 		value: function _done(){
 			this.done= true
-			if( !this.no
-			this.pending= null
-			this.stream= null
+			if( this.cleanup!== false){
+				this.pending= null
+				this.stream= null
+			}
 		}
 	},
 	return: {
-		value: function return( value){
+		value: function( value){
 			this._done()
 			return {
 				done: true,
@@ -158,7 +173,7 @@ AsyncIterMux.prototype= Object.create( null, {
 		}
 	},
 	throw: {
-		value: function throw( throwEx){
+		value: function( throwEx){
 			this._done()
 			if( !throwEx){
 				throwEx= new Error()
