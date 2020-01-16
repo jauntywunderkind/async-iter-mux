@@ -1,15 +1,17 @@
 import ShimToPolyfill from "shim-to-polyfill"
-const AbortError= ShimToPolyfill( "AbortError", import("@jauntywunderkind/abort-controller"))
+//const AbortError= ShimToPolyfill( "AbortError", import("@jauntywunderkind/abort-controller"))
 
 export function AsyncIterMux( opt){
 	Object.defineProperties( this, {
 		// where our wrapped next values will arrive
 		pending: {
-			value: []
+			value: [],
+			writable: true
 		},
 		// the corresponding array of streams
 		stream: {
-			value: []
+			value: [],
+			writable: true
 		},
 		_raceResolve: {
 			value: this._raceResolve.bind( this)
@@ -29,11 +31,7 @@ AsyncIterMux.prototype= Object.create( null, {
 	add: {
 		value: function add( stream){
 			// build context for this stream
-			const
-				pos= this.stream.length,
-				datum= {}
-			// store this context
-			this.data.set( stream, datum)
+			const pos= this.stream.length
 			// save this stream
 			this.stream.push( stream)
 
@@ -59,7 +57,7 @@ AsyncIterMux.prototype= Object.create( null, {
 			reject.pos= pos
 	
 			// run first resolve/reject
-			const next= stream.next.then( resolve, reject)
+			const next= stream.next().then( resolve, reject)
 			// store in pending
 			this.pending.push( next)
 			return this
@@ -85,7 +83,7 @@ AsyncIterMux.prototype= Object.create( null, {
 			}
 
 			// get next value, using tools of our our continuation
-			const next= ctx.stream.next( ctx.resolve, ctx.reject)
+			const next= ctx.stream.next().then( ctx.resolve, ctx.reject)
 
 			// check pos. streams can be deleted, which would change pos.
 			const pos= this._getStreamPos( ctx)
@@ -112,7 +110,7 @@ AsyncIterMux.prototype= Object.create( null, {
 			this.pending.splice( pos, 1)
 
 			// all items have been consumed
-			if( this.stream.length=== 0&& this.terminate!== false)
+			if( this.stream.length=== 0&& this.terminate!== false){
 				this._done()
 				return {
 					done: true,
