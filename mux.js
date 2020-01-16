@@ -3,12 +3,11 @@ const AbortError= ShimToPolyfill( "AbortError", import("abort-controller"))
 
 export function AsyncIterMux( opt){
 	Object.defineProperties( this, {
-		data: {
-			value: new WeakMap()
-		},
+		// where our wrapped next values will arrive
 		pending: {
 			value: []
 		},
+		// the corresponding array of streams
 		stream: {
 			value: []
 		},
@@ -19,6 +18,7 @@ export function AsyncIterMux( opt){
 			value: this._raceReject.bind( this)
 		}
 	})
+
 	return this
 }
 export {
@@ -139,12 +139,37 @@ AsyncIterMux.prototype= Object.create( null, {
 		}
 	},
 
-	// more
-	return( returnValue){
+	// lifecycle methods
+	_done: {
+		value: function _done(){
+			this.done= true
+			if( !this.no
+			this.pending= null
+			this.stream= null
+		}
 	},
-	throw( throwEx){
+	return: {
+		value: function return( value){
+			this._done()
+			return {
+				done: true,
+				value
+			}
+		}
 	},
-	abort( abortEx){
+	throw: {
+		value: function throw( throwEx){
+			this._done()
+			if( !throwEx){
+				throwEx= new Error()
+			}
+			throw throwEx
+		}
+	},
+	abort: {
+		value: function abort( abortEx){
+			return this.throw( abortEx)
+		}
 	},
 	[ Symbol.asyncIterator]: {
 		value: function(){
