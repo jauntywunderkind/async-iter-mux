@@ -110,12 +110,9 @@ AsyncIterMux.prototype= Object.create( null, {
 			this.pending.splice( pos, 1)
 
 			// all items have been consumed
-			if( this.stream.length=== 0&& this.terminate!== false){
-				this._done()
-				return {
-					done: true,
-					value: undefined
-				}
+			const empty= this._empty()
+			if( empty){
+				return empty
 			}
 
 			// try again
@@ -143,8 +140,24 @@ AsyncIterMux.prototype= Object.create( null, {
 			return pos
 		}
 	},
+	_empty: {
+		value: function _empty(){
+			// all items have been consumed
+			if( this.stream.length=== 0&& this.terminate!== false){
+				this._done()
+				return {
+					done: true,
+					value: undefined
+				}
+			}
+		}
+	},
 	next: {
 		value: function next( passedIn){
+			const empty= this._empty()
+			if( empty){
+				return empty
+			}
 			return Promise
 				.race( this.pending)
 				.then( this._raceResolve, this._raceReject)
