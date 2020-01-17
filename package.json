@@ -1,6 +1,6 @@
 {
 	"name": "async-iter-mux",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "multiplex multiple streams into a stream",
 	"main": "mux.js",
 	"scripts": {
