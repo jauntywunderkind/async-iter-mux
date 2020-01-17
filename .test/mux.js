@@ -14,7 +14,7 @@ tape( "mux", async function( t){
 		t.equal( n, cur, `value=${cur}`)
 		++cur
 	}
-	t.equal( cur, 3, "length correct")
+	t.equal( cur, 3, "count")
 	t.end()
 })
 

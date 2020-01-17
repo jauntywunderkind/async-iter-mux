@@ -126,21 +126,21 @@ AsyncIterMux.prototype= Object.create( null, {
 		}
 	},
 	_getStreamPos: {
-		value: function({ pos, stream}){
+		value: function({ pos, stream, resolve, reject}){
 			// pos is only expected pos. but streams can also move.
 			if( this.stream[ pos]=== stream){
 				return pos
 			}
-	
+
 			// calculate position again
 			pos= this.stream.indexOf( stream)
 			if( pos=== -1){
 				throw new Error( "Could not find stream")
 			}
 			// update our continuations
-			if( ctx.resolve){
-				ctx.resolve.pos= pos
-				ctx.reject.pos= pos
+			if( resolve){
+				resolve.pos= pos
+				reject.pos= pos
 			}
 			// return pos
 			return pos
