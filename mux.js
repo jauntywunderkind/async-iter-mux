@@ -20,6 +20,9 @@ export function AsyncIterMux( opt){
 			value: this._raceReject.bind( this)
 		}
 	})
+	if( opt&& opt.streams){
+		this.add( ...opt.streams)
+	}
 	return this
 }
 export {
@@ -29,7 +32,7 @@ export {
 }
 AsyncIterMux.prototype= Object.create( null, {
 	add: {
-		value: function add( stream){
+		value: function add( stream, ...more){
 			// build context for this stream
 			const pos= this.stream.length
 			// save this stream
@@ -60,10 +63,13 @@ AsyncIterMux.prototype= Object.create( null, {
 			const next= stream.next().then( resolve, reject)
 			// store in pending
 			this.pending.push( next)
+
+			if( more.length){
+				return this.add( ...more)
+			}
 			return this
 		}
 	},
-
 
 	// next
 	_raceResolve: {
